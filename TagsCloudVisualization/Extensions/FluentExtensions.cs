@@ -6,7 +6,7 @@ namespace TagsCloudVisualization.Extensions
 {
     public static class FluentExtensions
     {
-        public static void ShouldNotIntersect(this IReadOnlyList<Rectangle> rectangles)
+        public static void ShouldNotIntersect(this IReadOnlyList<RectangleF> rectangles)
         {
             for (var i = 1; i < rectangles.Count; i++)
             for (var j = 0; j < i; j++)

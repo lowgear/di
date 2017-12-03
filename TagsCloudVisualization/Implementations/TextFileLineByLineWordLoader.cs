@@ -4,6 +4,7 @@ using System.Text;
 
 namespace TagsCloudVisualization.Implementations
 {
+    // ReSharper disable once UnusedMember.Global
     public class TextFileLineByLineWordLoader : PreparatingWordLoader
     {
         private readonly Encoding encoding;
@@ -23,7 +24,7 @@ namespace TagsCloudVisualization.Implementations
                     var word = sr.ReadLine();
                     if (word == null)
                         break;
-                    words.AddLast(word.Trim());
+                    words.AddLast(word);
                 }
             }
             return words;

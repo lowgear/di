@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Linq;
 using MoreLinq;
@@ -7,6 +9,7 @@ using TagsCloudVisualization.Interfaces;
 
 namespace TagsCloudVisualization.Implementations
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class CircularCloudLayouter : ICloudLayouter
     {
         private readonly IWordFrequencyCounter wordFrequencyCounter;
@@ -14,34 +17,38 @@ namespace TagsCloudVisualization.Implementations
         private readonly IRectangleLayouter rectangleLayouter;
         private readonly FontFamily fontFamily;
         private readonly Brush brush;
-        private TextRenderingHint textRenderingHintSupplier;
+        private readonly StringFormat stringFormat;
+        private readonly int style;
+        private readonly Pen pen;
 
-        public CircularCloudLayouter(IWordFrequencyCounter wordFrequencyCounter, IWordSizeCalculator wordSizeCalculator, IRectangleLayouter rectangleLayouter, FontFamily fontFamily, Brush brush, Func<TextRenderingHint> textRenderingHintSupplier)
+        public CircularCloudLayouter(IWordFrequencyCounter wordFrequencyCounter,
+            IWordSizeCalculator wordSizeCalculator, IRectangleLayouter rectangleLayouter,
+            FontFamily fontFamily, Brush brush,
+            Func<StringFormat> stringFormatSupplier, Func<FontStyle> styleSupplier, Pen pen)
         {
             this.wordFrequencyCounter = wordFrequencyCounter;
             this.wordSizeCalculator = wordSizeCalculator;
             this.rectangleLayouter = rectangleLayouter;
             this.fontFamily = fontFamily;
             this.brush = brush;
-            this.textRenderingHintSupplier = textRenderingHintSupplier();
+            this.pen = pen;
+            style = (int) styleSupplier();
+            stringFormat = stringFormatSupplier();
         }
 
-        public Image Layout(string[] words)
+        public Image Layout(IEnumerable<string> words)
         {
+            words = words.ToArray();
+
             var uniqWordsAndFrequencies = wordFrequencyCounter.CountFrequencies(words)
                 .OrderBy(t => t.Item2, OrderByDirection.Descending).ToArray();
-            var emSizes = wordSizeCalculator.CalculateEmSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
-
-            var graphics = Graphics.FromImage(new Bitmap(1, 1));
-            var fonts = Enumerable
+            var pointSizes =
+                wordSizeCalculator.CalculateEmSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
+            var rectangles = Enumerable
                 .Range(0, uniqWordsAndFrequencies.Length)
-                .Select(i => new Font(fontFamily, emSizes[i]))
+                .Select(i => MeasureWord(uniqWordsAndFrequencies[i].Item1, pointSizes[i]))
                 .ToArray();
-            var sizes = Enumerable
-                .Range(0, uniqWordsAndFrequencies.Length)
-                .Select(i => graphics.MeasureString(uniqWordsAndFrequencies[i].Item1, fonts[i]))
-                .ToArray();
-            var layouts = rectangleLayouter.LayoutRectangles(sizes);
+            var layouts = rectangleLayouter.LayoutRectangles(rectangles.Select(r => new SizeF(r.Width, r.Height)));
 
             var minX = layouts
                 .Min(layout => layout.X);
@@ -49,27 +56,57 @@ namespace TagsCloudVisualization.Implementations
                 .Min(layout => layout.Y);
             var maxX = Enumerable
                 .Range(0, uniqWordsAndFrequencies.Length)
-                .Max(i => layouts[i].X + sizes[i].Width);
+                .Max(i => layouts[i].X + rectangles[i].Right);
             var maxY = Enumerable
                 .Range(0, uniqWordsAndFrequencies.Length)
-                .Max(i => layouts[i].Y + sizes[i].Height);
+                .Max(i => layouts[i].Y + rectangles[i].Bottom);
 
             var offset = new SizeF(-minX, -minY);
 
             var width = (int) Math.Ceiling(maxX - minX);
             var height = (int) Math.Ceiling(maxY - minY);
             var bitmap = new Bitmap(width, height);
-            graphics = Graphics.FromImage(bitmap);
-            graphics.TextRenderingHint = textRenderingHintSupplier;
+            var graphics = Graphics.FromImage(bitmap);
+            SetUpGraphics(graphics);
+            var graphicsPath = new GraphicsPath();
             foreach (var i in Enumerable.Range(0, uniqWordsAndFrequencies.Length))
             {
                 var word = uniqWordsAndFrequencies[i].Item1;
-                var font = fonts[i];
                 var location = layouts[i];
-                graphics.DrawString(word, font, brush, PointF.Add(location, offset));
+                var pointSize = pointSizes[i];
+                var subOffset = new SizeF(rectangles[i].X, rectangles[i].Y);
+                graphicsPath.AddString(
+                    word,
+                    fontFamily,
+                    style,
+                    pointSize,
+                    PointF.Subtract(PointF.Add(location, offset), subOffset),
+                    stringFormat);
             }
+            graphics.FillPath(brush, graphicsPath);
+            graphics.DrawPath(pen, graphicsPath);
 
             return bitmap;
+        }
+
+        private static void SetUpGraphics(Graphics graphics)
+        {
+            graphics.InterpolationMode = InterpolationMode.High;
+            graphics.SmoothingMode = SmoothingMode.HighQuality;
+            graphics.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+            graphics.CompositingQuality = CompositingQuality.HighQuality;
+        }
+
+        private RectangleF MeasureWord(string word, float pointSize)
+        {
+            var path = new GraphicsPath();
+            path.AddString(word,
+                fontFamily,
+                style,
+                pointSize,
+                PointF.Empty,
+                stringFormat);
+            return path.GetBounds();
         }
     }
 }

@@ -39,11 +39,8 @@
     <Reference Include="Castle.Windsor, Version=4.0.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <HintPath>..\packages\Castle.Windsor.4.1.0\lib\net45\Castle.Windsor.dll</HintPath>
     </Reference>
-    <Reference Include="CommandLine, Version=1.9.3.15, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\CommandLineParser.1.9.3.15\lib\CommandLine.dll</HintPath>
-    </Reference>
-    <Reference Include="DocoptNet, Version=0.6.1.4, Culture=neutral, PublicKeyToken=7a38c71da49a547e, processorArchitecture=MSIL">
-      <HintPath>..\packages\docopt.net.0.6.1.9\lib\net40\DocoptNet.dll</HintPath>
+    <Reference Include="CommandLine, Version=1.9.71.2, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommandLineParser.1.9.71\lib\net45\CommandLine.dll</HintPath>
     </Reference>
     <Reference Include="FluentAssertions, Version=4.19.4.0, Culture=neutral, PublicKeyToken=33f2691a05b67b6a, processorArchitecture=MSIL">
       <HintPath>..\packages\FluentAssertions.4.19.4\lib\net45\FluentAssertions.dll</HintPath>
@@ -64,6 +61,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Remoting" />
     <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.4.0\lib\net461\System.ValueTuple.dll</HintPath>
@@ -78,22 +76,28 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="Implementations\AlignmentLayouter.cs" />
+    <Compile Include="Implementations\MultithreadedAlignmentLayouter.cs" />
     <Compile Include="Implementations\CircularCloudLayouter.cs" />
     <Compile Include="Extensions\FluentExtensions.cs" />
     <Compile Include="Implementations\FrequencyCounter.cs" />
+    <Compile Include="Interfaces\IWordValidator.cs" />
     <Compile Include="Implementations\PreparatingWordLoader.cs" />
+    <Compile Include="Implementations\WordValidator.cs" />
     <Compile Include="Interfaces\ICloudLayouter.cs" />
     <Compile Include="Interfaces\IRectangleLayouter.cs" />
     <Compile Include="Interfaces\IWordFrequencyCounter.cs" />
     <Compile Include="Interfaces\IWordSizeCalculator.cs" />
     <Compile Include="Interfaces\IWordLoader.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Extensions\PointFExtensions.cs" />
     <Compile Include="Extensions\RectangleFExtensions.cs" />
     <Compile Include="Implementations\TextFileLineByLineWordLoader.cs" />
-    <Compile Include="Implementations\SizeCalculater.cs" />
+    <Compile Include="Implementations\SizeCalculator.cs" />
+    <Compile Include="Tests\MultithreadedAlignmentLayouterTests.cs" />
+    <Compile Include="Tests\PreparatingWordLoaderTests.cs" />
     <Compile Include="Tests\RectangleFExtensionsTests.cs" />
+    <Compile Include="Implementations\TextFileExtractingWordLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -108,9 +112,6 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Main.usage.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

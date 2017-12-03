@@ -7,7 +7,7 @@ namespace TagsCloudVisualization.Implementations
 {
     public class FrequencyCounter : IWordFrequencyCounter
     {
-        public IEnumerable<Tuple<string, int>> CountFrequencies(string[] words)
+        public IEnumerable<Tuple<string, int>> CountFrequencies(IEnumerable<string> words)
         {
             return words
                 .GroupBy(word => word)

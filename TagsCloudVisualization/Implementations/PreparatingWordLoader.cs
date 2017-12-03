@@ -10,7 +10,7 @@ namespace TagsCloudVisualization.Implementations
         {
             var words = LoadRawWords(fileName);
             return words
-                .Select(word => word.ToLower())
+                .Select(word => word.ToLower().Trim())
                 .ToArray();
         }
 

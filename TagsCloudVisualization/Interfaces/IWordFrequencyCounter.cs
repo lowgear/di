@@ -5,6 +5,6 @@ namespace TagsCloudVisualization.Interfaces
 {
     public interface IWordFrequencyCounter
     {
-        IEnumerable<Tuple<string, int>> CountFrequencies(string[] words);
+        IEnumerable<Tuple<string, int>> CountFrequencies(IEnumerable<string> words);
     }
 }
