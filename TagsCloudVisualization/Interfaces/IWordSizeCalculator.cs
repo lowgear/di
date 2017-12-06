@@ -2,6 +2,6 @@
 {
     public interface IWordSizeCalculator
     {
-        float[] CalculateEmSizes(int[] frequencies);
+        float[] CalculatePointSizes(int[] frequencies);
     }
 }

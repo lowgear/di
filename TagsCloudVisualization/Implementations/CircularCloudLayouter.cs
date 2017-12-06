@@ -38,7 +38,7 @@ namespace TagsCloudVisualization.Implementations
                 uniqWordsAndFrequencies = uniqWordsAndFrequencies.Take(takeSoMany).ToArray();
 
             var pointSizes =
-                wordSizeCalculator.CalculateEmSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
+                wordSizeCalculator.CalculatePointSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
             var rectangles = Enumerable
                 .Range(0, uniqWordsAndFrequencies.Length)
                 .Select(i => MeasureWord(

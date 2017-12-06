@@ -12,7 +12,7 @@ namespace TagsCloudVisualization.Implementations
             this.minPointSize = minPointSize;
         }
 
-        public float[] CalculateEmSizes(int[] frequencies)
+        public float[] CalculatePointSizes(int[] frequencies)
         {
             var minFrequency = frequencies.Min();
             return frequencies.Select(i => i * minPointSize / minFrequency).ToArray();

@@ -9,8 +9,8 @@ namespace TagsCloudVisualization.Extensions
         public static void ShouldNotIntersect(this IReadOnlyList<RectangleF> rectangles)
         {
             for (var i = 1; i < rectangles.Count; i++)
-            for (var j = 0; j < i; j++)
-                rectangles[i].IntersectsWith(rectangles[j]).Should().BeFalse();
+                for (var j = 0; j < i; j++)
+                    rectangles[i].IntersectsWith(rectangles[j]).Should().BeFalse();
         }
     }
 }

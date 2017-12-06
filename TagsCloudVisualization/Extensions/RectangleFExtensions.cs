@@ -14,11 +14,6 @@ namespace TagsCloudVisualization.Extensions
                     (x, y) => new PointF(x, y));
         }
 
-        public static double Area(this Rectangle rectangle)
-        {
-            return rectangle.Height * rectangle.Width;
-        }
-
         public static IEnumerable<PointF> LocationsIfHadVertex(this RectangleF rectangle, PointF p)
         {
             yield return p;
