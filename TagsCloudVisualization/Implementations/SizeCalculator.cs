@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using TagsCloudVisualization.Interfaces;
 
 namespace TagsCloudVisualization.Implementations

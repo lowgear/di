@@ -3,21 +3,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using TagsCloudVisualization.Interfaces;
 
 namespace TagsCloudVisualization.Implementations
 {
     // ReSharper disable once ClassNeverInstantiated.Global
-    public class TextFileExtractingWordLoader : PreparatingWordLoader
+    public class TextFileExtractingWordLoader : IWordLoader
     {
         private static readonly Regex WordRegex = new Regex(@"(?<word>[^\W\d]+)");
-        private readonly Encoding encoding;
 
-        public TextFileExtractingWordLoader(Encoding encoding)
-        {
-            this.encoding = encoding;
-        }
-
-        protected override IEnumerable<string> LoadRawWords(string fileName)
+        public IEnumerable<string> LoadWords(string fileName, Encoding encoding)
         {
             using (var sr = new StreamReader(fileName, encoding))
             {

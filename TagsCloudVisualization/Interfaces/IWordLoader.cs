@@ -1,7 +1,10 @@
-﻿namespace TagsCloudVisualization.Interfaces
+﻿using System.Collections.Generic;
+using System.Text;
+
+namespace TagsCloudVisualization.Interfaces
 {
     public interface IWordLoader
     {
-        string[] LoadWords(string fileName);
+        IEnumerable<string> LoadWords(string fileName, Encoding encoding);
     }
 }

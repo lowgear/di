@@ -6,7 +6,7 @@ using TagsCloudVisualization.Extensions;
 namespace TagsCloudVisualization.Tests
 {
     [TestFixture]
-    public class RectangleFExtensionsTests
+    public class RectangleFExtensions_Should
     {
         [Test]
         public void LocationsIfHadVertex_ReturnsProperLocations()

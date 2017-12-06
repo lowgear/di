@@ -76,28 +76,34 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Interfaces\IMarginCalculator.cs" />
     <Compile Include="Implementations\MultithreadedAlignmentLayouter.cs" />
     <Compile Include="Implementations\CircularCloudLayouter.cs" />
     <Compile Include="Extensions\FluentExtensions.cs" />
     <Compile Include="Implementations\FrequencyCounter.cs" />
     <Compile Include="Interfaces\IWordValidator.cs" />
-    <Compile Include="Implementations\PreparatingWordLoader.cs" />
+    <Compile Include="Implementations\WordPreparer.cs" />
     <Compile Include="Implementations\WordValidator.cs" />
     <Compile Include="Interfaces\ICloudLayouter.cs" />
     <Compile Include="Interfaces\IRectangleLayouter.cs" />
     <Compile Include="Interfaces\IWordFrequencyCounter.cs" />
     <Compile Include="Interfaces\IWordSizeCalculator.cs" />
     <Compile Include="Interfaces\IWordLoader.cs" />
+    <Compile Include="Interfaces\IWordPreparer.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Extensions\PointFExtensions.cs" />
     <Compile Include="Extensions\RectangleFExtensions.cs" />
     <Compile Include="Implementations\TextFileLineByLineWordLoader.cs" />
     <Compile Include="Implementations\SizeCalculator.cs" />
-    <Compile Include="Tests\MultithreadedAlignmentLayouterTests.cs" />
-    <Compile Include="Tests\PreparatingWordLoaderTests.cs" />
-    <Compile Include="Tests\RectangleFExtensionsTests.cs" />
+    <Compile Include="Implementations\RelativeMarginCalculator.cs" />
+    <Compile Include="Tests\CircularCloudLayouter_Should.cs" />
+    <Compile Include="Tests\MultithreadedAlignmentLayouter_Should.cs" />
+    <Compile Include="Tests\TextFileLineByLineWordLoader_Should.cs" />
+    <Compile Include="Tests\WordPreparer_Should.cs" />
+    <Compile Include="Tests\RectangleFExtensions_Should.cs" />
     <Compile Include="Implementations\TextFileExtractingWordLoader.cs" />
+    <Compile Include="Tests\WordValidator_Should.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

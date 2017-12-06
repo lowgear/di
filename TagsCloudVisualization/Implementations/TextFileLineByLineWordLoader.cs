@@ -1,20 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using TagsCloudVisualization.Interfaces;
 
 namespace TagsCloudVisualization.Implementations
 {
     // ReSharper disable once UnusedMember.Global
-    public class TextFileLineByLineWordLoader : PreparatingWordLoader
+    public class TextFileLineByLineWordLoader : IWordLoader
     {
-        private readonly Encoding encoding;
-
-        public TextFileLineByLineWordLoader(Encoding encoding)
-        {
-            this.encoding = encoding;
-        }
-
-        protected override IEnumerable<string> LoadRawWords(string fileName)
+        public IEnumerable<string> LoadWords(string fileName, Encoding encoding)
         {
             var words = new LinkedList<string>();
             using (var sr = new StreamReader(fileName, encoding))

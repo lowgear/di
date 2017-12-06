@@ -15,38 +15,39 @@ namespace TagsCloudVisualization.Implementations
         private readonly IWordFrequencyCounter wordFrequencyCounter;
         private readonly IWordSizeCalculator wordSizeCalculator;
         private readonly IRectangleLayouter rectangleLayouter;
-        private readonly FontFamily fontFamily;
-        private readonly Brush brush;
-        private readonly StringFormat stringFormat;
-        private readonly int style;
-        private readonly Pen pen;
+        private readonly IMarginCalculator marginCalculator;
 
         public CircularCloudLayouter(IWordFrequencyCounter wordFrequencyCounter,
-            IWordSizeCalculator wordSizeCalculator, IRectangleLayouter rectangleLayouter,
-            FontFamily fontFamily, Brush brush,
-            Func<StringFormat> stringFormatSupplier, Func<FontStyle> styleSupplier, Pen pen)
+            IWordSizeCalculator wordSizeCalculator, IRectangleLayouter rectangleLayouter, IMarginCalculator marginCalculator)
         {
             this.wordFrequencyCounter = wordFrequencyCounter;
             this.wordSizeCalculator = wordSizeCalculator;
             this.rectangleLayouter = rectangleLayouter;
-            this.fontFamily = fontFamily;
-            this.brush = brush;
-            this.pen = pen;
-            style = (int) styleSupplier();
-            stringFormat = stringFormatSupplier();
+            this.marginCalculator = marginCalculator;
         }
 
-        public Image Layout(IEnumerable<string> words)
+        public Image Layout(IEnumerable<string> words, int takeSoMany, float marginToSizeCoefficient, StringFormat stringFormat, FontFamily fontFamily,
+            FontStyle fontStyle, Brush brush, Pen pen)
         {
             words = words.ToArray();
 
             var uniqWordsAndFrequencies = wordFrequencyCounter.CountFrequencies(words)
                 .OrderBy(t => t.Item2, OrderByDirection.Descending).ToArray();
+
+            if (takeSoMany > 0)
+                uniqWordsAndFrequencies = uniqWordsAndFrequencies.Take(takeSoMany).ToArray();
+
             var pointSizes =
                 wordSizeCalculator.CalculateEmSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
             var rectangles = Enumerable
                 .Range(0, uniqWordsAndFrequencies.Length)
-                .Select(i => MeasureWord(uniqWordsAndFrequencies[i].Item1, pointSizes[i]))
+                .Select(i => MeasureWord(
+                    uniqWordsAndFrequencies[i].Item1, 
+                    pointSizes[i], 
+                    stringFormat, 
+                    fontFamily, 
+                    fontStyle))
+                .Select(marginCalculator.CalculateBounds)
                 .ToArray();
             var layouts = rectangleLayouter.LayoutRectangles(rectangles.Select(r => new SizeF(r.Width, r.Height)));
 
@@ -78,7 +79,7 @@ namespace TagsCloudVisualization.Implementations
                 graphicsPath.AddString(
                     word,
                     fontFamily,
-                    style,
+                    (int) fontStyle,
                     pointSize,
                     PointF.Subtract(PointF.Add(location, offset), subOffset),
                     stringFormat);
@@ -97,12 +98,13 @@ namespace TagsCloudVisualization.Implementations
             graphics.CompositingQuality = CompositingQuality.HighQuality;
         }
 
-        private RectangleF MeasureWord(string word, float pointSize)
+        private RectangleF MeasureWord(string word, float pointSize, StringFormat stringFormat, FontFamily fontFamily, FontStyle fontStyle)
         {
             var path = new GraphicsPath();
-            path.AddString(word,
+            path.AddString(
+                word,
                 fontFamily,
-                style,
+                (int)fontStyle,
                 pointSize,
                 PointF.Empty,
                 stringFormat);

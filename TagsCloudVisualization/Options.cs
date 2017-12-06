@@ -52,6 +52,21 @@ namespace TagsCloudVisualization
             HelpText = "Size in points of the smalest tag in cloud.")]
         public float MinPointSize { get; set; }
 
+        [Option('n', "number",
+            DefaultValue = 500,
+            HelpText = "Number of top frequent words to take. 500 by default. 0 for all.")]
+        public int WordsToTake { get; set; }
+
+        [Option('m', "margincoef",
+            DefaultValue = 0.05F,
+            HelpText = "Number of top frequent words to take. 500 by default. 0 for all.")]
+        public float MarginToSizeCoefficient { get; set; }
+
+        [Option("exclwordsencoding",
+            DefaultValue = "utf-16",
+            HelpText = "Encoding of the input file.")]
+        public string ExcludedWordsFileEncoding { get; set; }
+
         [HelpOption]
         public string GetUsage()
         {

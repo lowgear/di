@@ -8,7 +8,7 @@ using TagsCloudVisualization.Implementations;
 namespace TagsCloudVisualization.Tests
 {
     [TestFixture]
-    public class MultithreadedAlignmentLayouterTests
+    public class MultithreadedAlignmentLayouter_Should
     {
         [Test]
         public void Rectangle_ShouldBeOfSameSizeAsGiven()

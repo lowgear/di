@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Drawing.Text;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,10 +25,11 @@ namespace TagsCloudVisualization
                 !IsValidInputPath(Options.InputFilePath) ||
                 !IsValidOutputPath(Options.OutputFilePath) ||
                 !TryParseFontFamily(out var fontFamily) ||
-                !TryParseEncoding(out var encoding) ||
+                !TryParseEncoding(out var encoding, Options.Encoding) ||
                 !TryParseBrush(out var brush) ||
                 !TryParseImageFormat(out var imageFormat) ||
                 !TryParsePen(out var pen) ||
+                !TryParseEncoding(out var excludedfWordsFileEncoding, Options.ExcludedWordsFileEncoding) ||
                 !(string.IsNullOrEmpty(Options.ExcludedWordsFilePath) ||
                   IsValidInputPath(Options.ExcludedWordsFilePath))
             )
@@ -46,21 +46,15 @@ namespace TagsCloudVisualization
                 Component.For<IWordFrequencyCounter>().ImplementedBy<FrequencyCounter>(),
                 Component.For<IWordSizeCalculator>().Instance(new SizeCalculator(Options.MinPointSize)),
                 Component.For<IRectangleLayouter>().ImplementedBy<MultithreadedAlignmentLayouter>(),
-                Component.For<FontFamily>().Instance(fontFamily),
-                Component.For<Brush>().Instance(brush),
-                Component.For<Encoding>().Instance(encoding),
-                Component.For<ImageFormat>().Instance(imageFormat),
-                Component.For<Func<TextRenderingHint>>().Instance(() => TextRenderingHint.AntiAliasGridFit),
-                Component.For<Func<StringFormat>>().Instance(() => StringFormat.GenericTypographic),
-                Component.For<Func<FontStyle>>().Instance(() => FontStyle.Regular),
-                Component.For<Pen>().Instance(pen),
                 Component.For<IWordValidator>().UsingFactoryMethod(() => new WordValidator(
                     string.IsNullOrEmpty(Options.ExcludedWordsFilePath)
                         ? Enumerable.Empty<string>()
-                        : Containter.Resolve<IWordLoader>().LoadWords(Options.ExcludedWordsFilePath)))
+                        : Containter.Resolve<IWordLoader>().LoadWords(Options.ExcludedWordsFilePath, excludedfWordsFileEncoding))),
+                Component.For<IWordPreparer>().ImplementedBy<WordPreparer>(),
+                Component.For<IMarginCalculator>().Instance(new RelativeMarginCalculator(Options.MarginToSizeCoefficient))
             );
 
-            Run();
+            Run(fontFamily, FontStyle.Regular, brush, pen, imageFormat, encoding);
 
             Containter.Dispose();
         }
@@ -151,11 +145,11 @@ namespace TagsCloudVisualization
             }
         }
 
-        private static bool TryParseEncoding(out Encoding encoding)
+        private static bool TryParseEncoding(out Encoding encoding, string encodingName)
         {
             try
             {
-                encoding = Encoding.GetEncoding(Options.Encoding);
+                encoding = Encoding.GetEncoding(encodingName);
                 return true;
             }
             catch (ArgumentException)
@@ -186,19 +180,20 @@ namespace TagsCloudVisualization
             Console.Error.WriteLine("Error:\n\t" + errorMessage);
         }
 
-        private static void Run()
+        private static void Run(FontFamily fontFamily, FontStyle fontStyle, Brush brush, Pen pen, ImageFormat imageFormat, Encoding encoding)
         {
             var cloudLayouter = Containter.Resolve<ICloudLayouter>();
             var wordsLoader = Containter.Resolve<IWordLoader>();
-            var imageFormat = Containter.Resolve<ImageFormat>();
-
+            var wordPreparer = Containter.Resolve<IWordPreparer>();
             var wordValidator = Containter.Resolve<IWordValidator>();
 
             var words = wordsLoader
-                .LoadWords(Options.InputFilePath)
+                .LoadWords(Options.InputFilePath, encoding)
+                .Select(wordPreparer.PrepareWord)
                 .Where(wordValidator.IsValid)
                 .ToArray();
-            var bitmap = cloudLayouter.Layout(words);
+            var bitmap = cloudLayouter.Layout(words, Options.WordsToTake, Options.MarginToSizeCoefficient,
+                StringFormat.GenericTypographic, fontFamily, fontStyle, brush, pen);
             bitmap.Save(Options.OutputFilePath, imageFormat);
         }
     }
