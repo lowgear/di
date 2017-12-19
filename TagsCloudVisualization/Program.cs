@@ -8,6 +8,7 @@ using Castle.MicroKernel.Registration;
 using Castle.Windsor;
 using TagsCloudVisualization.Implementations;
 using TagsCloudVisualization.Interfaces;
+using TagsCloudVisualization.util;
 
 namespace TagsCloudVisualization
 {
@@ -19,26 +20,102 @@ namespace TagsCloudVisualization
         public static void Main(string[] args)
         {
             var isValid = CommandLine.Parser.Default.ParseArguments(args, Options);
-
-
-            if (!isValid ||
-                !IsValidInputPath(Options.InputFilePath) ||
-                !IsValidOutputPath(Options.OutputFilePath) ||
-                !TryParseFontFamily(out var fontFamily) ||
-                !TryParseEncoding(out var encoding, Options.Encoding) ||
-                !TryParseBrush(out var brush) ||
-                !TryParseImageFormat(out var imageFormat) ||
-                !TryParsePen(out var pen) ||
-                !TryParseEncoding(out var excludedfWordsFileEncoding, Options.ExcludedWordsFileEncoding) ||
-                !(string.IsNullOrEmpty(Options.ExcludedWordsFilePath) ||
-                  IsValidInputPath(Options.ExcludedWordsFilePath))
-            )
+            if (!isValid)
                 return;
+
+
+            var inputPath = Result.Of(
+                () =>
+                {
+                    File.OpenRead(Options.InputFilePath).Dispose();
+                    return Options.InputFilePath;
+                },
+                "Unable to read from input path. File does not exits or read permission denied.");
+
+            var outputPath = Result.Of(
+                () =>
+                {
+                    File.Create(Options.OutputFilePath).Dispose();
+                    File.Delete(Options.OutputFilePath);
+                    return Options.OutputFilePath;
+                },
+                "Unable to write to output path. Directory does not exist or write permission denied.");
+
+            var excludedWordsPath = Result.Of(
+                () =>
+                {
+                    if (string.IsNullOrEmpty(Options.ExcludedWordsFilePath))
+                        return null;
+                    File.OpenRead(Options.ExcludedWordsFilePath).Dispose();
+                    return Options.ExcludedWordsFilePath;
+                },
+                "Unable to read from excluded words path. File does not exits or read permission denied.");
+
+            var inputEncoding = Result.Of(
+                () => Encoding.GetEncoding(Options.InputEncoding),
+                $"No such encoding detected {Options.InputEncoding}");
+
+            var excludedfWordsFileEncoding = Result.Of(
+                () => Encoding.GetEncoding(Options.ExcludedWordsFileEncoding),
+                $"No such encoding detected {Options.ExcludedWordsFileEncoding}");
+
+            var imageFormat = Result.Of(
+                () => (ImageFormat) typeof(ImageFormat)
+                    .GetProperties()
+                    .First(property =>
+                        property.PropertyType == typeof(ImageFormat) &&
+                        property.Name.Equals(Options.ImageFormat, StringComparison.OrdinalIgnoreCase))
+                    .GetValue(null),
+                $"No such image format detected {Options.ImageFormat}");
+
+            var fontFamily = Result.Of(
+                () => new FontFamily(Options.FontFamily),
+                $"No such font family detected {Options.FontFamily}");
+
+            var brush = Result.Of(
+                () =>
+                {
+                    if (!Enum.TryParse<KnownColor>(Options.FillColorName, true, out var _))
+                        throw new ArgumentException();
+                    return new SolidBrush(Color.FromName(Options.FillColorName));
+                },
+                $"No such color detected {Options.FillColorName}");
+
+            var pen = Result.Of(
+                () =>
+                {
+                    if (!Enum.TryParse<KnownColor>(Options.OutlineColorName, true, out var _))
+                        throw new ArgumentException();
+                    return new Pen(Color.FromName(Options.OutlineColorName));
+                },
+                $"No such color detected {Options.OutlineColorName}");
+
             foreach (var property in Options.GetType().GetProperties())
             {
                 Console.WriteLine("{0} = {1}", property.Name, property.GetValue(Options));
             }
             Console.WriteLine(string.Concat(Enumerable.Repeat('=', Console.WindowWidth)));
+
+            var anyErrors = false;
+            foreach (var result in new IResult[]
+            {
+                inputPath,
+                outputPath,
+                excludedWordsPath,
+                inputEncoding,
+                excludedfWordsFileEncoding,
+                imageFormat,
+                fontFamily,
+                brush,
+                pen
+            })
+            {
+                if (result.IsSuccess) continue;
+                WriteError(result.Error);
+                anyErrors = true;
+            }
+            if (anyErrors)
+                return;
 
             Containter.Register(
                 Component.For<ICloudLayouter>().ImplementedBy<CircularCloudLayouter>(),
@@ -47,132 +124,19 @@ namespace TagsCloudVisualization
                 Component.For<IWordSizeCalculator>().Instance(new SizeCalculator(Options.MinPointSize)),
                 Component.For<IRectangleLayouter>().ImplementedBy<MultithreadedAlignmentLayouter>(),
                 Component.For<IWordValidator>().UsingFactoryMethod(() => new WordValidator(
-                    string.IsNullOrEmpty(Options.ExcludedWordsFilePath)
+                    excludedWordsPath.Value == null
                         ? Enumerable.Empty<string>()
-                        : Containter.Resolve<IWordLoader>().LoadWords(Options.ExcludedWordsFilePath, excludedfWordsFileEncoding))),
+                        : Containter.Resolve<IWordLoader>().LoadWords(excludedWordsPath.Value,
+                            excludedfWordsFileEncoding.Value))),
                 Component.For<IWordPreparer>().ImplementedBy<WordPreparer>(),
-                Component.For<IMarginCalculator>().Instance(new RelativeMarginCalculator(Options.MarginToSizeCoefficient))
+                Component.For<IMarginCalculator>()
+                    .Instance(new RelativeMarginCalculator(Options.MarginToSizeCoefficient))
             );
 
-            Run(fontFamily, FontStyle.Regular, brush, pen, imageFormat, encoding);
+            Run(fontFamily.Value, FontStyle.Regular, brush.Value, pen.Value, imageFormat.Value,
+                inputEncoding.Value);
 
             Containter.Dispose();
-        }
-
-        private static bool TryParsePen(out Pen pen)
-        {
-            try
-            {
-                pen = new Pen(Color.FromName(Options.OutlineColorName));
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                WriteError("Invalid fill color.");
-                pen = null;
-                return false;
-            }
-        }
-
-        private static bool IsValidOutputPath(string outputFileName)
-        {
-            try
-            {
-                new FileStream(outputFileName, FileMode.Append).Dispose();
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    File.Create(outputFileName).Dispose();
-                    File.Delete(outputFileName);
-                }
-                catch (Exception)
-                {
-                    WriteError("Directory does not exist or write permission denied.");
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private static bool IsValidInputPath(string inputFileName)
-        {
-            try
-            {
-                File.OpenRead(inputFileName).Dispose();
-            }
-            catch (Exception)
-            {
-                WriteError("File does not exits or read permission denied.");
-                return false;
-            }
-            return true;
-        }
-
-        private static bool TryParseImageFormat(out ImageFormat imageFormat)
-        {
-            try
-            {
-                imageFormat = (ImageFormat) typeof(ImageFormat)
-                    .GetProperties()
-                    .First(property =>
-                        property.PropertyType == typeof(ImageFormat) &&
-                        property.Name.Equals(Options.ImageFormat, StringComparison.OrdinalIgnoreCase))
-                    .GetValue(null);
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                WriteError("Invalid fill color.");
-                imageFormat = null;
-                return false;
-            }
-        }
-
-        private static bool TryParseBrush(out Brush brush)
-        {
-            try
-            {
-                brush = new SolidBrush(Color.FromName(Options.FillColorName));
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                WriteError("Invalid fill color.");
-                brush = null;
-                return false;
-            }
-        }
-
-        private static bool TryParseEncoding(out Encoding encoding, string encodingName)
-        {
-            try
-            {
-                encoding = Encoding.GetEncoding(encodingName);
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                WriteError("Invalid encoding.");
-                encoding = null;
-                return false;
-            }
-        }
-
-        private static bool TryParseFontFamily(out FontFamily fontFamily)
-        {
-            try
-            {
-                fontFamily = new FontFamily(Options.FontFamily);
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                WriteError("Invalid font.");
-                fontFamily = null;
-                return false;
-            }
         }
 
         private static void WriteError(string errorMessage)
@@ -180,7 +144,8 @@ namespace TagsCloudVisualization
             Console.Error.WriteLine("Error:\n\t" + errorMessage);
         }
 
-        private static void Run(FontFamily fontFamily, FontStyle fontStyle, Brush brush, Pen pen, ImageFormat imageFormat, Encoding encoding)
+        private static void Run(FontFamily fontFamily, FontStyle fontStyle, Brush brush, Pen pen,
+            ImageFormat imageFormat, Encoding encoding)
         {
             var cloudLayouter = Containter.Resolve<ICloudLayouter>();
             var wordsLoader = Containter.Resolve<IWordLoader>();
@@ -194,7 +159,12 @@ namespace TagsCloudVisualization
                 .ToArray();
             var bitmap = cloudLayouter.Layout(words, Options.WordsToTake, Options.MarginToSizeCoefficient,
                 StringFormat.GenericTypographic, fontFamily, fontStyle, brush, pen);
-            bitmap.Save(Options.OutputFilePath, imageFormat);
+            if (!bitmap.IsSuccess)
+            {
+                WriteError(bitmap.Error);
+                return;
+            }
+            bitmap.Value.Save(Options.OutputFilePath, imageFormat);
         }
     }
 }

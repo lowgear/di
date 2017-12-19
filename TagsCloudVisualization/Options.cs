@@ -45,7 +45,7 @@ namespace TagsCloudVisualization
         [Option("encoding",
             DefaultValue = "utf-16",
             HelpText = "Encoding of the input file.")]
-        public string Encoding { get; set; }
+        public string InputEncoding { get; set; }
 
         [Option('s', "size",
             DefaultValue = 100,

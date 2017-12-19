@@ -107,6 +107,7 @@
     <Compile Include="Tests\RectangleFExtensions_Should.cs" />
     <Compile Include="Implementations\TextFileExtractingWordLoader.cs" />
     <Compile Include="Tests\WordValidator_Should.cs" />
+    <Compile Include="util\Result.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
