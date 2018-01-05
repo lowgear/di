@@ -5,6 +5,6 @@ namespace TagsCloudVisualization.Interfaces
 {
     public interface IRectangleLayouter
     {
-        PointF[] LayoutRectangles(IEnumerable<SizeF> rectangles);
+        IEnumerable<PointF> LayoutRectangles(IEnumerable<SizeF> rectangles);
     }
 }

@@ -1,13 +1,13 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
+using static System.Math;
 
 namespace TagsCloudVisualization.Extensions
 {
     public static class PointFExtensions
     {
-        public static double DistanceTo(this PointF point1, PointF point2)
+        public static double DistanceTo(this PointF A, PointF B)
         {
-            return Math.Sqrt(Math.Pow(point1.X - point2.X, 2) + Math.Pow(point1.Y - point2.Y, 2));
+            return Sqrt(Pow(A.X - B.X, 2) + Pow(A.Y - B.Y, 2));
         }
     }
 }

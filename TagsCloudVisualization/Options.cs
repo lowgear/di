@@ -9,7 +9,7 @@ namespace TagsCloudVisualization
     public class Options
     {
         [Option('i', "input",
-            HelpText = "Input file with words for tag cloud.",
+            HelpText = "Input file with words for tag cloud. Words longer than 100 will be ommited.",
             Required = true)]
         public string InputFilePath { get; set; }
 
@@ -53,19 +53,24 @@ namespace TagsCloudVisualization
         public float MinPointSize { get; set; }
 
         [Option('n', "number",
-            DefaultValue = 500,
+            DefaultValue = null,
             HelpText = "Number of top frequent words to take. 500 by default. 0 for all.")]
-        public int WordsToTake { get; set; }
+        public int? WordsToTake { get; set; }
 
         [Option('m', "margincoef",
             DefaultValue = 0.05F,
-            HelpText = "Number of top frequent words to take. 500 by default. 0 for all.")]
+            HelpText = "Number of top frequent words to take. 500 by default. 0 for all. Should not exceed 5000.")]
         public float MarginToSizeCoefficient { get; set; }
 
         [Option("exclwordsencoding",
             DefaultValue = "utf-16",
             HelpText = "Encoding of the input file.")]
         public string ExcludedWordsFileEncoding { get; set; }
+
+        [Option("wordlenlimit",
+            DefaultValue = 100,
+            HelpText = "Word length limitation. 100 by default. 0 for no limitation.")]
+        public int WordLengthLimit { get; set; }
 
         [HelpOption]
         public string GetUsage()

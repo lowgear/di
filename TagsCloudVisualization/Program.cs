@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Text;
 using Castle.MicroKernel.Registration;
 using Castle.Windsor;
+using MoreLinq;
 using TagsCloudVisualization.Implementations;
 using TagsCloudVisualization.Interfaces;
 using TagsCloudVisualization.util;
@@ -90,6 +92,24 @@ namespace TagsCloudVisualization
                 },
                 $"No such color detected {Options.OutlineColorName}");
 
+            var wordsLimit = Result.Of(
+                () =>
+                {
+                    if (Options.WordsToTake < 0 || Options.WordsToTake > 5000)
+                        throw new ArgumentException();
+                    return Options.WordsToTake;
+                },
+                $"Words number limit should be not negative and not greater than 5000 but was {Options.WordsToTake}");
+
+            var wordLengthLimit = Result.Of(
+                () =>
+                {
+                    if (Options.WordLengthLimit < 0 || Options.WordLengthLimit > 500)
+                        throw new ArgumentException();
+                    return Options.WordLengthLimit;
+                },
+                $"Words length limit should be not negative and not greater than 500 but was {Options.WordLengthLimit}");
+
             foreach (var property in Options.GetType().GetProperties())
             {
                 Console.WriteLine("{0} = {1}", property.Name, property.GetValue(Options));
@@ -107,7 +127,9 @@ namespace TagsCloudVisualization
                 imageFormat,
                 fontFamily,
                 brush,
-                pen
+                pen,
+                wordsLimit,
+                wordLengthLimit
             })
             {
                 if (result.IsSuccess) continue;
@@ -118,23 +140,23 @@ namespace TagsCloudVisualization
                 return;
 
             Containter.Register(
-                Component.For<ICloudLayouter>().ImplementedBy<CircularCloudLayouter>(),
+                Component.For<ICloudLayouter>().ImplementedBy<CloudLayouter>(),
                 Component.For<IWordLoader>().ImplementedBy<TextFileExtractingWordLoader>(),
-                Component.For<IWordFrequencyCounter>().ImplementedBy<FrequencyCounter>(),
                 Component.For<IWordSizeCalculator>().Instance(new SizeCalculator(Options.MinPointSize)),
                 Component.For<IRectangleLayouter>().ImplementedBy<MultithreadedAlignmentLayouter>(),
                 Component.For<IWordValidator>().UsingFactoryMethod(() => new WordValidator(
                     excludedWordsPath.Value == null
                         ? Enumerable.Empty<string>()
                         : Containter.Resolve<IWordLoader>().LoadWords(excludedWordsPath.Value,
-                            excludedfWordsFileEncoding.Value))),
+                            excludedfWordsFileEncoding.Value),
+                    wordLengthLimit.Value)),
                 Component.For<IWordPreparer>().ImplementedBy<WordPreparer>(),
                 Component.For<IMarginCalculator>()
                     .Instance(new RelativeMarginCalculator(Options.MarginToSizeCoefficient))
             );
 
             Run(fontFamily.Value, FontStyle.Regular, brush.Value, pen.Value, imageFormat.Value,
-                inputEncoding.Value);
+                inputEncoding.Value, wordsLimit.Value);
 
             Containter.Dispose();
         }
@@ -145,26 +167,43 @@ namespace TagsCloudVisualization
         }
 
         private static void Run(FontFamily fontFamily, FontStyle fontStyle, Brush brush, Pen pen,
-            ImageFormat imageFormat, Encoding encoding)
+            ImageFormat imageFormat, Encoding encoding, int? wordsLimit)
         {
             var cloudLayouter = Containter.Resolve<ICloudLayouter>();
             var wordsLoader = Containter.Resolve<IWordLoader>();
             var wordPreparer = Containter.Resolve<IWordPreparer>();
             var wordValidator = Containter.Resolve<IWordValidator>();
+            var wordSizeCalculator = Containter.Resolve<IWordSizeCalculator>();
 
             var words = wordsLoader
                 .LoadWords(Options.InputFilePath, encoding)
                 .Select(wordPreparer.PrepareWord)
                 .Where(wordValidator.IsValid)
                 .ToArray();
-            var bitmap = cloudLayouter.Layout(words, Options.WordsToTake, Options.MarginToSizeCoefficient,
+            IEnumerable<Tuple<string, int>> uniqWordsAndFrequencies = FrequencyCounter.CountFrequencies(words);
+
+            if (wordsLimit != null)
+                uniqWordsAndFrequencies = uniqWordsAndFrequencies.Take((int) wordsLimit);
+
+            var pointSizes =
+                wordSizeCalculator.CalculatePointSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
+            var wordsAndSizes = uniqWordsAndFrequencies.Zip(pointSizes, (wordAndFrequency, size) =>
+                new KeyValuePair<string, float>(wordAndFrequency.Item1, size)).ToDictionary();
+
+            var bitmap = cloudLayouter.Layout(wordsAndSizes, Options.MarginToSizeCoefficient,
                 StringFormat.GenericTypographic, fontFamily, fontStyle, brush, pen);
             if (!bitmap.IsSuccess)
             {
                 WriteError(bitmap.Error);
                 return;
             }
-            bitmap.Value.Save(Options.OutputFilePath, imageFormat);
+            var image = bitmap.Value.DrawLayout();
+            if (!image.IsSuccess)
+            {
+                WriteError(image.Error);
+                return;
+            }
+            image.Value.Save(Options.OutputFilePath, imageFormat);
         }
     }
 }
