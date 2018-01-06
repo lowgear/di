@@ -1,7 +1,9 @@
-﻿namespace TagsCloudVisualization.Interfaces
+﻿using System.Collections.Generic;
+
+namespace TagsCloudVisualization.Interfaces
 {
     public interface IWordSizeCalculator
     {
-        float[] CalculatePointSizes(int[] frequencies);
+        float[] CalculatePointSizes(IReadOnlyCollection<int> frequencies);
     }
 }

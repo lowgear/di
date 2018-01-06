@@ -93,6 +93,7 @@
     <Compile Include="Interfaces\IWordSizeCalculator.cs" />
     <Compile Include="Interfaces\IWordLoader.cs" />
     <Compile Include="Interfaces\IWordPreparer.cs" />
+    <Compile Include="IRunDependensies.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Extensions\PointFExtensions.cs" />
@@ -100,6 +101,7 @@
     <Compile Include="Implementations\TextFileLineByLineWordLoader.cs" />
     <Compile Include="Implementations\SizeCalculator.cs" />
     <Compile Include="Implementations\RelativeMarginCalculator.cs" />
+    <Compile Include="RunDependensies.cs" />
     <Compile Include="Tests\MultithreadedAlignmentLayouter_Should.cs" />
     <Compile Include="Tests\TextFileLineByLineWordLoader_Should.cs" />
     <Compile Include="Tests\WordPreparer_Should.cs" />

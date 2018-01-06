@@ -114,32 +114,34 @@ namespace TagsCloudVisualization
             {
                 Console.WriteLine("{0} = {1}", property.Name, property.GetValue(Options));
             }
-            Console.WriteLine(string.Concat(Enumerable.Repeat('=', Console.WindowWidth)));
+            Console.WriteLine(new string('=', Console.WindowWidth));
 
-            var anyErrors = false;
-            foreach (var result in new IResult[]
-            {
-                inputPath,
-                outputPath,
-                excludedWordsPath,
-                inputEncoding,
-                excludedfWordsFileEncoding,
-                imageFormat,
-                fontFamily,
-                brush,
-                pen,
-                wordsLimit,
-                wordLengthLimit
-            })
-            {
-                if (result.IsSuccess) continue;
-                WriteError(result.Error);
-                anyErrors = true;
-            }
+            var anyErrors = new IResult[]
+                {
+                    inputPath,
+                    outputPath,
+                    excludedWordsPath,
+                    inputEncoding,
+                    excludedfWordsFileEncoding,
+                    imageFormat,
+                    fontFamily,
+                    brush,
+                    pen,
+                    wordsLimit,
+                    wordLengthLimit
+                }
+                .Where(result => !result.IsSuccess)
+                .Select(result =>
+                {
+                    WriteError(result.Error);
+                    return result;
+                })
+                .Any();
             if (anyErrors)
                 return;
 
             Containter.Register(
+                Component.For<IRunDependensies>().ImplementedBy<RunDependensies>(),
                 Component.For<ICloudLayouter>().ImplementedBy<CloudLayouter>(),
                 Component.For<IWordLoader>().ImplementedBy<TextFileExtractingWordLoader>(),
                 Component.For<IWordSizeCalculator>().Instance(new SizeCalculator(Options.MinPointSize)),
@@ -163,22 +165,18 @@ namespace TagsCloudVisualization
 
         private static void WriteError(string errorMessage)
         {
-            Console.Error.WriteLine("Error:\n\t" + errorMessage);
+            Console.Error.WriteLine($"Error:{Environment.NewLine}\t" + errorMessage);
         }
 
         private static void Run(FontFamily fontFamily, FontStyle fontStyle, Brush brush, Pen pen,
             ImageFormat imageFormat, Encoding encoding, int? wordsLimit)
         {
-            var cloudLayouter = Containter.Resolve<ICloudLayouter>();
-            var wordsLoader = Containter.Resolve<IWordLoader>();
-            var wordPreparer = Containter.Resolve<IWordPreparer>();
-            var wordValidator = Containter.Resolve<IWordValidator>();
-            var wordSizeCalculator = Containter.Resolve<IWordSizeCalculator>();
+            var dep = Containter.Resolve<IRunDependensies>();
 
-            var words = wordsLoader
+            var words = dep.WordsLoader
                 .LoadWords(Options.InputFilePath, encoding)
-                .Select(wordPreparer.PrepareWord)
-                .Where(wordValidator.IsValid)
+                .Select(dep.WordPreparer.PrepareWord)
+                .Where(dep.WordValidator.IsValid)
                 .ToArray();
             IEnumerable<Tuple<string, int>> uniqWordsAndFrequencies = FrequencyCounter.CountFrequencies(words);
 
@@ -186,11 +184,11 @@ namespace TagsCloudVisualization
                 uniqWordsAndFrequencies = uniqWordsAndFrequencies.Take((int) wordsLimit);
 
             var pointSizes =
-                wordSizeCalculator.CalculatePointSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
+                dep.WordSizeCalculator.CalculatePointSizes(uniqWordsAndFrequencies.Select(t => t.Item2).ToArray());
             var wordsAndSizes = uniqWordsAndFrequencies.Zip(pointSizes, (wordAndFrequency, size) =>
                 new KeyValuePair<string, float>(wordAndFrequency.Item1, size)).ToDictionary();
 
-            var bitmap = cloudLayouter.Layout(wordsAndSizes, Options.MarginToSizeCoefficient,
+            var bitmap = dep.CloudLayouter.Layout(wordsAndSizes, Options.MarginToSizeCoefficient,
                 StringFormat.GenericTypographic, fontFamily, fontStyle, brush, pen);
             if (!bitmap.IsSuccess)
             {
@@ -203,7 +201,14 @@ namespace TagsCloudVisualization
                 WriteError(image.Error);
                 return;
             }
-            image.Value.Save(Options.OutputFilePath, imageFormat);
+            try
+            {
+                image.Value.Save(Options.OutputFilePath, imageFormat);
+            }
+            catch (Exception e)
+            {
+                WriteError($"Unable to save image to specified location.{Environment.NewLine}{e}");
+            }
         }
     }
 }

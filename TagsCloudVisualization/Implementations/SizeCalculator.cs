@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using TagsCloudVisualization.Interfaces;
 
 namespace TagsCloudVisualization.Implementations
@@ -12,7 +13,7 @@ namespace TagsCloudVisualization.Implementations
             this.minPointSize = minPointSize;
         }
 
-        public float[] CalculatePointSizes(int[] frequencies)
+        public float[] CalculatePointSizes(IReadOnlyCollection<int> frequencies)
         {
             var minFrequency = frequencies.Min();
             return frequencies.Select(i => i * minPointSize / minFrequency).ToArray();
