@@ -79,9 +79,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Implementations\Layout.cs" />
     <Compile Include="Interfaces\IMarginCalculator.cs" />
     <Compile Include="Implementations\MultithreadedAlignmentLayouter.cs" />
-    <Compile Include="Implementations\CircularCloudLayouter.cs" />
+    <Compile Include="Implementations\CloudLayouter.cs" />
     <Compile Include="Extensions\FluentExtensions.cs" />
     <Compile Include="Implementations\FrequencyCounter.cs" />
     <Compile Include="Interfaces\IWordValidator.cs" />
@@ -89,10 +90,10 @@
     <Compile Include="Implementations\WordValidator.cs" />
     <Compile Include="Interfaces\ICloudLayouter.cs" />
     <Compile Include="Interfaces\IRectangleLayouter.cs" />
-    <Compile Include="Interfaces\IWordFrequencyCounter.cs" />
     <Compile Include="Interfaces\IWordSizeCalculator.cs" />
     <Compile Include="Interfaces\IWordLoader.cs" />
     <Compile Include="Interfaces\IWordPreparer.cs" />
+    <Compile Include="IRunDependensies.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Extensions\PointFExtensions.cs" />
@@ -100,7 +101,7 @@
     <Compile Include="Implementations\TextFileLineByLineWordLoader.cs" />
     <Compile Include="Implementations\SizeCalculator.cs" />
     <Compile Include="Implementations\RelativeMarginCalculator.cs" />
-    <Compile Include="Tests\CircularCloudLayouter_Should.cs" />
+    <Compile Include="RunDependensies.cs" />
     <Compile Include="Tests\MultithreadedAlignmentLayouter_Should.cs" />
     <Compile Include="Tests\TextFileLineByLineWordLoader_Should.cs" />
     <Compile Include="Tests\WordPreparer_Should.cs" />

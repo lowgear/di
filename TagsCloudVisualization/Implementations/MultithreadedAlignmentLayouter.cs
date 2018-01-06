@@ -13,7 +13,7 @@ namespace TagsCloudVisualization.Implementations
     // ReSharper disable once ClassNeverInstantiated.Global
     public class MultithreadedAlignmentLayouter : IRectangleLayouter
     {
-        public static PointF Center => PointF.Empty;
+        private static PointF Center => PointF.Empty;
 
         private static PointF PutNextRectangle(SizeF rectangleSize, IList<RectangleF> existingRectangles,
             ISet<PointF> existingVertices)
@@ -105,12 +105,12 @@ namespace TagsCloudVisualization.Implementations
             });
         }
 
-        public PointF[] LayoutRectangles(IEnumerable<SizeF> sizes)
+        public IEnumerable<PointF> LayoutRectangles(IEnumerable<SizeF> sizes)
         {
             IList<RectangleF> existingRectangles = new List<RectangleF>();
             ISet<PointF> existingVertices = new HashSet<PointF>();
-            return sizes.Select(size => PutNextRectangle(size, existingRectangles, existingVertices))
-                .ToArray();
+            return sizes
+                .Select(size => PutNextRectangle(size, existingRectangles, existingVertices));
         }
     }
 }

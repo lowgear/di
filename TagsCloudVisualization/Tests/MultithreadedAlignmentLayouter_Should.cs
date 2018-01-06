@@ -17,7 +17,7 @@ namespace TagsCloudVisualization.Tests
             var size = new SizeF(2, 3);
             var expected = new PointF(-size.Width / 2, -size.Height / 2);
 
-            var point = layouter.LayoutRectangles(new[] {size})[0];
+            var point = layouter.LayoutRectangles(new[] {size}).First();
 
             point.Should().Be(expected);
         }
@@ -33,7 +33,7 @@ namespace TagsCloudVisualization.Tests
 
             var points = layouter.LayoutRectangles(Enumerable.Repeat(size, n));
 
-            points.Length.Should().Be(n);
+            points.Count().Should().Be(n);
         }
 
         [TestCase(1)]

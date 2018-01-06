@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TagsCloudVisualization.Interfaces;
 
 namespace TagsCloudVisualization.Implementations
 {
-    public class FrequencyCounter : IWordFrequencyCounter
+    public static class FrequencyCounter
     {
-        public IEnumerable<Tuple<string, int>> CountFrequencies(IEnumerable<string> words)
+        public static Tuple<T, int>[] CountFrequencies<T>(IEnumerable<T> elements)
         {
-            return words
-                .GroupBy(word => word)
+            return elements
+                .GroupBy(element => element)
                 .Select(group => Tuple.Create(group.Key, group.Count()))
                 .ToArray();
         }
